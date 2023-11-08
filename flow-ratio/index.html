@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flow Ratio Calculator</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        #chart-container {
+            width: 75%;
+            height: 50vh;
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Flow Ratio Calculator</h1>
+
+    <label for="currFlowRatio">Current flow ratio:</label>
+    <input type="number" id="currFlowRatio" value="1.00" step="0.01" placeholder="1.00"><br><br>
+    
+    <label for="expectedWidth">Expected Width:</label>
+    <input type="number" id="expectedWidth" value="0.8" step="0.01" placeholder="0.8">mm<br><br>
+
+    <label for="measurements">Measured Width (one per line):</label><br>
+    <small>Make at least 4 measurements</small><br>
+    <textarea id="measurements" rows="10" cols="10" oninput="calculate()">
+0.78
+0.77
+0.76
+0.77
+0.75
+</textarea>
+    <br>
+    <button onclick="calculate()">Calculate</button>
+    <button onclick="clear()">Clear All</button>
+
+    <hr>
+
+    <div id="results"></div>
+    <button onclick="nextIteration()">Next test</button>
+    <small>To test this new value click Next</small>
+
+    <br>
+
+    <div id="chart-container">
+        <canvas id="chart"></canvas>
+    </div>
+
+    <script>
+        let testNumber = 0;
+        let tests = [
+            // {
+            // currentFlowRatio: 1.0,
+            // expectedWidth: 0.8,
+            // measurements: [],
+            // average: 0.8,
+            // calculatedFlowRatio: 1.0,
+            // }
+        ];
+
+        const resultsDiv = document.getElementById('results');
+        const expectedWidthInput = document.getElementById('expectedWidth');
+        const currFlowRatioInput = document.getElementById('currFlowRatio'); // TODO:
+        const measurementsTextArea = document.getElementById('measurements');
+        const ctx = document.getElementById('chart').getContext('2d');
+        let chart;
+
+        function calculate() {
+            const expectedWidth = parseFloat(expectedWidthInput.value);
+            let values = measurementsTextArea.value.trim().split(/\n/).map(Number).filter(n => !isNaN(n));
+            let sum = values.reduce((acc, val) => acc + val, 0);
+            let average = sum / values.length;
+            let currFlowRatio = parseFloat(currFlowRatioInput.value);
+            let calculatedFlowRatio = (expectedWidth / average) * currFlowRatio;
+
+            tests[testNumber] = {
+                currFlowRatio: currFlowRatio,
+                expectedWidth: expectedWidth,
+                measurements: values,
+                average: average,
+                calculatedFlowRatio: calculatedFlowRatio,
+            }
+
+            resultsDiv.innerHTML = `
+                <h1>Results test ${testNumber + 1}</h1>
+                <p>Current flow rate: ${currFlowRatio.toFixed(4)}</p>
+                <p>Average Measured Dimension: ${average.toFixed(4)}</p>
+                <p>Error: ${(100 * Math.abs(expectedWidth - average) / expectedWidth).toFixed(4)}%</p>
+                <p>New Flow ratio: <h2>${calculatedFlowRatio.toFixed(4)}</h2></p>
+            `;
+            
+            updateChart();
+            save();
+        }
+
+        function nextIteration() {
+            calculate();
+
+            currFlowRatioInput.value = tests[testNumber].calculatedFlowRatio.toFixed(4);
+            measurementsTextArea.value = '';
+            resultsDiv.innerHTML = '';
+            testNumber++;
+        }
+
+
+        function save() {
+            localStorage.setItem('FLOW_RATE_DATA', JSON.stringify(tests));
+        }
+
+        function load() {
+            try {
+                tests = JSON.parse(localStorage.getItem('FLOW_RATE_DATA'));
+                testNumber = tests.length - 1;
+
+                const lastTest = tests[tests.length - 1];
+                expectedWidthInput.value = lastTest.expectedWidth;
+                currFlowRatioInput.value = lastTest.calculatedFlowRatio;
+                measurementsTextArea.value = lastTest.measurements.join('\n');
+                calculate();
+
+            } catch (err) { }
+        }
+
+
+        function updateChart() {
+            let expectedSizes = tests.map((test, i) => ({ x: 1 + i, y: test.expectedWidth }));
+
+            let measurements = tests.flatMap((test, n) =>
+                test.measurements.map((value, i) => ({
+                    x: 1 + n + (0.25 / test.measurements.length * (i - (test.measurements.length - 1) / 2)),
+                    y: value
+                }))
+            );
+
+            let averages = tests.map((test, i) => ({ x: 1 + i, y: test.average }));
+            let calculatedFlowRatios = tests.map((test, i) => ({ x: 1 + i, y: test.calculatedFlowRatio }));
+            let currFlowRatio = tests.map((test, i) => ({ x: 1 + i, y: test.currFlowRatio }));
+
+            if (chart) chart.destroy();
+            chart = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [
+                        {
+                            type: 'line',
+                            label: 'Expected Size',
+                            data: expectedSizes,
+                            borderColor: 'green',
+                            pointStyle: 'line',
+                            borderWidth: 2,
+                            pointRadius: 50,
+                        },
+                        {
+                            type: 'line',
+                            label: 'Average',
+                            data: averages,
+                            borderColor: 'magenta',
+                            pointStyle: 'cross',
+                            borderWidth: 2,
+                            pointRadius: 32,
+                        },
+                        {
+                            label: 'Measurements',
+                            data: measurements,
+                            borderColor: 'orange',
+                            pointStyle: 'crossRot',
+                            borderWidth: 2,
+                            pointRadius: 16,
+                        },
+                        {
+                            type: 'line',
+                            label: 'Current Multiplier',
+                            data: currFlowRatio,
+                            yAxisID: 'y1',
+                            borderColor: 'red',
+                            pointStyle: 'circle',
+                            borderWidth: 1,
+                            pointRadius: 3,
+                        },
+                        {
+                            // type: 'line',
+                            label: 'New Multiplier',
+                            data: calculatedFlowRatios,
+                            yAxisID: 'y1',
+                            borderColor: 'blue',
+                            pointStyle: 'rectRot',
+                            borderWidth: 1,
+                            pointRadius: 3,
+                        }
+                    ]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            beginAtZero: false,
+                            title: { display: true, text: 'Iteration' },
+                            min: 0,
+                            suggestedMax: 4,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        },
+                        y: {
+                            beginAtZero: false,
+                            title: { display: true, text: 'Dimension' },
+                            weight: 1,
+                        },
+                        y1: {
+                            beginAtZero: false,
+                            position: 'right',
+                            grid: { drawOnChartArea: false },
+                            title: { display: true, text: 'Multiplier' }
+                        }
+                    },
+
+                }
+            });
+        }
+
+        window.onload = function () {
+
+            load();
+
+        };
+
+    </script>
+
+</body>
+
+</html>
