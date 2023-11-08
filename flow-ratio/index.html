@@ -1,63 +1,250 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flow Ratio Calculator</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        :root {
+            --background-color-light: #f4f4f4;
+            --text-color-light: #333;
+            --container-bg-light: #fff;
+            --button-bg-light: #9c27b0;
+            /* Deep purple */
+            --button-hover-bg-light: #5e35b1;
+            /* Slightly darker purple */
+            --results-bg-light: #ede7f6;
+            /* Light purple */
+            --border-color-light: #ddd;
+
+            --background-color-dark: #121212;
+            --text-color-dark: #c7c7c7;
+            --container-bg-dark: #1e1e1e;
+            --button-bg-dark: #9c27b0;
+            /* Deep purple */
+            --button-hover-bg-dark: #5e35b1;
+            /* Slightly darker purple */
+            --results-bg-dark: #2c2c2c;
+            --border-color-dark: #444;
+        }
+
+        [data-theme="light"] {
+            --background-color: var(--background-color-light);
+            --text-color: var(--text-color-light);
+            --container-bg: var(--container-bg-light);
+            --button-bg: var(--button-bg-light);
+            --button-hover-bg: var(--button-hover-bg-light);
+            --results-bg: var(--results-bg-light);
+            --border-color: var(--border-color-light);
+        }
+
+        [data-theme="dark"] {
+            --background-color: var(--background-color-dark);
+            --text-color: var(--text-color-dark);
+            --container-bg: var(--container-bg-dark);
+            --button-bg: var(--button-bg-dark);
+            --button-hover-bg: var(--button-hover-bg-dark);
+            --results-bg: var(--results-bg-dark);
+            --border-color: var(--border-color-dark);
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background-color);
+            margin: 0;
+            padding: 20px;
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            background-color: var(--container-bg);
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s;
+        }
+
+        h1 {
+            color: var(--button-bg);
+            text-align: center;
+        }
+
+        label {
+            display: block;
+            margin: 15px 0 5px;
+        }
+
+        input,
+        textarea,
+        button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-sizing: border-box;
+            background-color: var(--container-bg);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s, border 0.3s;
+        }
+        button.big{
+            padding: 20px;
+            font-size: 150%;
+        }
+
+        /* Primary Button Style */
+        .primary-button {
+            background-color: var(--button-bg);
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .primary-button:hover {
+            background-color: var(--button-hover-bg);
+        }
+
+        /* Secondary Button Style */
+        .secondary-button {
+            background-color: #ccc; /* Set your secondary button color here */
+            color: #333; /* Text color for secondary button */
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .secondary-button:hover {
+            background-color: #999; /* Hover color for secondary button */
+        }
+
+        /* Danger Button Style */
+        .danger-button {
+            background-color: red; /* Set your danger button color here */
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .danger-button:hover {
+            background-color: darkred; /* Hover color for danger button */
         }
 
         #chart-container {
-            width: 75%;
-            height: 50vh;
+            margin-top: 20px;
+            width: 100%;
+            height: 400px;
         }
 
         canvas {
+            background-color: var(--container-bg);
+        }
+
+        .results {
+            padding: 20px;
+            background-color: var(--results-bg);
+            border-left: 4px solid var(--button-bg);
+            margin: 20px 0;
+            transition: background-color 0.3s;
+        }
+
+        .results h2 {
+            color: var(--button-bg);
+        }
+
+        .small {
             display: block;
-            margin: 0 auto;
-            width: 100%;
-            height: 100%;
+            margin-top: 5px;
+            color: var(--text-color);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                box-shadow: none;
+                margin: 0;
+                padding: 10px;
+            }
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                color-scheme: dark;
+                background-color: var(--background-color-dark);
+                color: var(--text-color-dark);
+            }
+        }
+
+        @media (prefers-color-scheme: light) {
+            :root {
+                color-scheme: light;
+                background-color: var(--background-color-light);
+                color: var(--text-color-light);
+            }
         }
     </style>
+
 </head>
 
-<body>
+<body data-theme="light">
+    <script>
+        // Detect system theme and set website theme accordingly
+        const setTheme = (theme) => {
+            document.body.setAttribute('data-theme', theme);
+        }
 
-    <h1>Flow Ratio Calculator</h1>
+        // Initial theme check
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            setTheme('dark');
+        }
 
-    <label for="currFlowRatio">Current flow ratio:</label>
-    <input type="number" id="currFlowRatio" value="1.00" step="0.01" placeholder="1.00"><br><br>
-    
-    <label for="expectedWidth">Expected Width:</label>
-    <input type="number" id="expectedWidth" value="0.8" step="0.01" placeholder="0.8">mm<br><br>
+        // Listener for system theme changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+            setTheme(e.matches ? 'dark' : 'light');
+        });
+    </script>
 
-    <label for="measurements">Measured Width (one per line):</label><br>
-    <small>Make at least 4 measurements</small><br>
-    <textarea id="measurements" rows="10" cols="10" oninput="calculate()">
-0.78
-0.77
-0.76
-0.77
-0.75
-</textarea>
-    <br>
-    <button onclick="calculate()">Calculate</button>
-    <button onclick="clear()">Clear All</button>
+    <div class="container">
+        <h1>Flow Ratio Calculator</h1>
 
-    <hr>
+        <div>
+            <label for="currFlowRatio">Current flow ratio:</label>
+            <input type="number" id="currFlowRatio" value="1.00" step="0.01" placeholder="1.00">
+        </div>
 
-    <div id="results"></div>
-    <button onclick="nextIteration()">Next test</button>
-    <small>To test this new value click Next</small>
+        <div>
+            <label for="expectedWidth">Expected Width (mm):</label>
+            <input type="number" id="expectedWidth" value="0.8" step="0.01" placeholder="0.8">
+        </div>
 
-    <br>
+        <div>
+            <label for="measurements">Measured Width (one per line):</label>
+            <small class="small">Measure each wall 2 times, only measure the top 1 or 2mm</small>
+            <textarea id="measurements" rows="10" placeholder="Enter measurements here..."></textarea>mm
+        </div>
 
-    <div id="chart-container">
-        <canvas id="chart"></canvas>
+        <div>
+            <button class="primary-button big" onclick="calculate()">Calculate</button>
+            <button class="button" onclick="reset()">Reset</button>
+            
+        </div>
+        
+        <div class="results" id="results"></div>
+
+        <div>
+            <p>Print the test again using the new flow ratio, and then click next</p>
+            <button class="secondary-button big" onclick="nextIteration()">Next test</button>
+        </div>
+
+        <div id="chart-container">
+            <canvas id="chart"></canvas>
+        </div>
     </div>
+
 
     <script>
         let testNumber = 0;
@@ -71,12 +258,25 @@
             // }
         ];
 
-        const resultsDiv = document.getElementById('results');
+        const currFlowRatioInput = document.getElementById('currFlowRatio');
         const expectedWidthInput = document.getElementById('expectedWidth');
-        const currFlowRatioInput = document.getElementById('currFlowRatio'); // TODO:
         const measurementsTextArea = document.getElementById('measurements');
+        const resultsDiv = document.getElementById('results');
         const ctx = document.getElementById('chart').getContext('2d');
         let chart;
+
+        function reset() {
+            if (confirm('Do you want to delete all data from all tests and start over?')) {
+                testNumber = 0;
+                tests = [];
+                currFlowRatioInput.value='1.0';
+                expectedWidthInput.value='0.8';
+                measurementsTextArea.value='';
+                resultsDiv.innerHTML='';
+                if (chart) chart.destroy();
+                //save();
+            }
+        }
 
         function calculate() {
             const expectedWidth = parseFloat(expectedWidthInput.value);
@@ -96,12 +296,12 @@
 
             resultsDiv.innerHTML = `
                 <h1>Results test ${testNumber + 1}</h1>
-                <p>Current flow rate: ${currFlowRatio.toFixed(4)}</p>
-                <p>Average Measured Dimension: ${average.toFixed(4)}</p>
+                <p>Current Flow ratio: ${currFlowRatio.toFixed(4)}</p>
+                <p>Average Measured Width: ${average.toFixed(4)}</p>
                 <p>Error: ${(100 * Math.abs(expectedWidth - average) / expectedWidth).toFixed(4)}%</p>
                 <p>New Flow ratio: <h2>${calculatedFlowRatio.toFixed(4)}</h2></p>
             `;
-            
+
             updateChart();
             save();
         }
@@ -113,16 +313,18 @@
             measurementsTextArea.value = '';
             resultsDiv.innerHTML = '';
             testNumber++;
+
+            alert(`Now enter the measurements for the new ${currFlowRatioInput.value} flow ratio test cube`);
         }
 
 
         function save() {
-            localStorage.setItem('FLOW_RATE_DATA', JSON.stringify(tests));
+            saveData(tests);
         }
 
         function load() {
             try {
-                tests = JSON.parse(localStorage.getItem('FLOW_RATE_DATA'));
+                tests = loadData() || [];
                 testNumber = tests.length - 1;
 
                 const lastTest = tests[tests.length - 1];
@@ -130,8 +332,33 @@
                 currFlowRatioInput.value = lastTest.calculatedFlowRatio;
                 measurementsTextArea.value = lastTest.measurements.join('\n');
                 calculate();
-
             } catch (err) { }
+        }
+
+
+
+        function saveData(data) {
+            const dataString = JSON.stringify(data);
+            const base64Data = btoa(dataString);
+            localStorage.setItem('data', base64Data);
+            const queryString = `?data=${base64Data}`;
+            window.history.pushState({ path: queryString }, '', queryString);
+        }
+
+        function loadData() {
+            const queryString = window.location.search;
+            const urlParams = new URLSearchParams(queryString);
+            const base64DataFromQueryString = urlParams.get('data');
+            if (base64DataFromQueryString) {
+                const decodedData = atob(base64DataFromQueryString);
+                return JSON.parse(decodedData);
+            }
+            const base64DataFromLocalStorage = localStorage.getItem('data');
+            if (base64DataFromLocalStorage) {
+                const decodedData = atob(base64DataFromLocalStorage);
+                return JSON.parse(decodedData);
+            }
+            return null;
         }
 
 
@@ -158,47 +385,47 @@
                             type: 'line',
                             label: 'Expected Size',
                             data: expectedSizes,
-                            borderColor: 'green',
+                            borderColor: '#00e676',
                             pointStyle: 'line',
                             borderWidth: 2,
-                            pointRadius: 50,
+                            pointRadius: 8,
                         },
                         {
                             type: 'line',
-                            label: 'Average',
+                            label: 'Measured (avg)',
                             data: averages,
-                            borderColor: 'magenta',
-                            pointStyle: 'cross',
-                            borderWidth: 2,
-                            pointRadius: 32,
-                        },
-                        {
-                            label: 'Measurements',
-                            data: measurements,
-                            borderColor: 'orange',
+                            borderColor: '#ffea00',
                             pointStyle: 'crossRot',
                             borderWidth: 2,
-                            pointRadius: 16,
+                            pointRadius: 12,
+                        },
+                        {
+                            label: 'Samples',
+                            data: measurements,
+                            borderColor: '#ff9100',
+                            pointStyle: 'cross',
+                            borderWidth: 1,
+                            pointRadius: 6,
                         },
                         {
                             type: 'line',
-                            label: 'Current Multiplier',
+                            label: 'Current Flow',
                             data: currFlowRatio,
                             yAxisID: 'y1',
-                            borderColor: 'red',
+                            borderColor: '#3d5afe',
                             pointStyle: 'circle',
                             borderWidth: 1,
-                            pointRadius: 3,
+                            pointRadius: 5,
                         },
                         {
                             // type: 'line',
-                            label: 'New Multiplier',
+                            label: 'Calculated Flow',
                             data: calculatedFlowRatios,
                             yAxisID: 'y1',
-                            borderColor: 'blue',
-                            pointStyle: 'rectRot',
-                            borderWidth: 1,
-                            pointRadius: 3,
+                            borderColor: '#9c27b0',
+                            pointStyle: 'circle',
+                            borderWidth: 2,
+                            pointRadius: 5,
                         }
                     ]
                 },
